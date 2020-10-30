@@ -20,9 +20,12 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.homework04.Util.DateUtil;
 import com.example.homework04.Util.ViewUtil;
 import com.example.homework04.bean.UserInfo;
 import com.example.homework04.database.UserDBHelper;
+
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -36,12 +39,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Switch sw_ios; // 声明一个开关按钮对象
     private TextView tv_ios_result; // 声明一个文本视图对象
     private Button btn_login;
+    private Button btn_logon;
     private int mRequestCode = 0; // 跳转页面时的请求代码
     private int mType = 2; // 用户类型
     private boolean bRemember = false; // 是否记住密码
     private String mPassword = "18990187"; // 默认密码
     private String mVerifyCode; // 验证码
     private SharedPreferences mShared;
+    private EditText ct_name;
+    private EditText ct_phonenumber;
+    private EditText ct_password;
 
 
 
@@ -62,6 +69,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         sw_ios = findViewById(R.id.sw_ios);
         tv_ios_result = findViewById(R.id.tv_ios_result);
         btn_login = findViewById(R.id.btn_login);
+        btn_logon = findViewById(R.id.btn_logon);
 
 
 
@@ -213,12 +221,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 return;
             }
             if (rb_password.isChecked()) { // 密码方式校验
-                //输入的密码跟mPassword比较
+                SharedPreferences shared1 = getSharedPreferences("share", MODE_PRIVATE);
                 if (!et_password.getText().toString().equals(mPassword)) {
                     Toast.makeText(this, "请输入正确的密码", Toast.LENGTH_SHORT).show();
                 } else { // 密码校验通过
                     loginSuccess(); // 提示用户登录成功
                 }
+
+
+
+
             } else if (rb_verify.isChecked()) { // 验证码方式校验
                 if (!et_password.getText().toString().equals(mVerifyCode)) {
                     Toast.makeText(this, "请输入正确的验证码", Toast.LENGTH_SHORT).show();
@@ -227,6 +239,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
         }
+        else if (v.getId() == R.id.btn_logon){
+            Intent intent = new Intent(this, RegisterWriteActivity.class);
+            startActivity(intent);
+        }
+
     }
 
     // 忘记密码修改后，从后一个页面携带参数返回当前页面时触发
