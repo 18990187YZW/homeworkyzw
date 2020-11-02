@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -27,8 +28,9 @@ import com.example.homework04.database.UserDBHelper;
 
 import java.util.Map;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
-
+public class MainActivity extends AppCompatActivity implements View.OnClickListener,View.OnFocusChangeListener{
+    
+    private static final String TAG = "MainActivity"; //Log提示信息
     private RadioGroup rg_login;
     private RadioButton rb_password;
     private RadioButton rb_verify;
@@ -36,20 +38,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView tv_password;
     private EditText et_password;
     private Button btn_forget;
-    private Switch sw_ios; // 声明一个开关按钮对象
-    private TextView tv_ios_result; // 声明一个文本视图对象
+    private Switch sw_ios; // 声明一个开关按钮对
     private Button btn_login;
     private Button btn_logon;
     private int mRequestCode = 0; // 跳转页面时的请求代码
     private int mType = 2; // 用户类型
     private boolean bRemember = false; // 是否记住密码
-    private String mPassword = "18990187"; // 默认密码
+    private String mPassword = "1111111"; // 默认密码
     private String mVerifyCode; // 验证码
-    private SharedPreferences mShared;
-    private EditText ct_name;
-    private EditText ct_phonenumber;
-    private EditText ct_password;
-
+    private SharedPreferences myShared; // 声明一个共享参数对象
+    private UserDBHelper myHelper; // 声明一个用户数据库的帮助器对象
 
 
     @Override
@@ -67,10 +65,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         et_password = findViewById(R.id.et_password);
         btn_forget = findViewById(R.id.btn_forget);
         sw_ios = findViewById(R.id.sw_ios);
-        tv_ios_result = findViewById(R.id.tv_ios_result);
         btn_login = findViewById(R.id.btn_login);
         btn_logon = findViewById(R.id.btn_logon);
-
 
 
         // 给rg_login设置单选监听器
@@ -80,13 +76,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // 给et_password添加文本变更监听器
         et_password.addTextChangedListener(new HideTextWatcher(et_password));
         sw_ios.setOnCheckedChangeListener(new CheckListener());
-        refreshResult(sw_ios);
         //从share_login.xml中获取共享参数对象
-        mShared = getSharedPreferences("share_login", MODE_PRIVATE);
+        myShared = getSharedPreferences("share_login", MODE_PRIVATE);
         // 获取共享参数中保存的手机号码
-        String phone = mShared.getString("phone", "");
+        String phone = myShared.getString("phone", "");
         // 获取共享参数中保存的密码
-        String password = mShared.getString("password", "");
+        String password = myShared.getString("password", "");
         et_phone.setText(phone); // 给手机号码编辑框填写上次保存的手机号
         et_password.setText(password); // 给密码编辑框填写上次保存的密码
 
@@ -96,6 +91,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
     private String[] typeArray = {"个人用户", "公司用户", "18990187闫振威"};
+
     // 初始化下拉框
     private void initTypeSpinner() {
         // 声明一个下拉列表的数组适配器
@@ -126,10 +122,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         */
         public void onItemSelected(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
             mType = arg2;
-                    //获取选择的项的值
+            //获取选择的项的值
 
 
         }
+
         @Override
         public void onNothingSelected(AdapterView<?> parent) {
 
@@ -146,10 +143,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 btn_forget.setText("忘记密码");
 //                sw_ios.setVisibility(View.VISIBLE);
 
-          } else if (checkedId == R.id.rb_verify) { // 选择了验证码登录
-               tv_password.setText("　验证码：");
-               et_password.setHint("请输入验证码");
-               btn_forget.setText("获取验证码");
+            } else if (checkedId == R.id.rb_verify) { // 选择了验证码登录
+                tv_password.setText("　验证码：");
+                et_password.setHint("请输入验证码");
+                btn_forget.setText("获取验证码");
 //                sw_ios.setVisibility(View.INVISIBLE);
 
             }
@@ -178,18 +175,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
 
-
         // 在编辑框的输入文本变化后触发
-    public void afterTextChanged(Editable s) {
-        if (mStr == null || mStr.length() == 0)
-            return;
-        // 手机号码输入达到11位，或者密码/验证码输入达到6位，都关闭输入法软键盘
-        if ((mStr.length() == 11 && mMaxLength == 11) ||
-                (mStr.length() == 8 && mMaxLength == 8)) {
-            ViewUtil.hideOneInputMethod(MainActivity.this, mView);
+        public void afterTextChanged(Editable s) {
+            if (mStr == null || mStr.length() == 0)
+                return;
+            // 手机号码输入达到11位，或者密码/验证码输入达到6位，都关闭输入法软键盘
+            if ((mStr.length() == 11 && mMaxLength == 11) ||
+                    (mStr.length() == 8 && mMaxLength == 8)) {
+                ViewUtil.hideOneInputMethod(MainActivity.this, mView);
+            }
         }
     }
-}
 
     @Override
     public void onClick(View v) {
@@ -221,29 +217,49 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 return;
             }
             if (rb_password.isChecked()) { // 密码方式校验
-                SharedPreferences shared1 = getSharedPreferences("share", MODE_PRIVATE);
-                if (!et_password.getText().toString().equals(mPassword)) {
-                    Toast.makeText(this, "请输入正确的密码", Toast.LENGTH_SHORT).show();
-                } else { // 密码校验通过
-                    loginSuccess(); // 提示用户登录成功
+                // 根据手机号码到数据库中查询用户记录
+                String phonenum = et_phone.getText().toString();
+                // 关闭数据库连接
+                myHelper.closeLink();
+                // 打开数据库帮助器的读连接
+                myHelper.openReadLink();
+                UserInfo info = myHelper.queryByPhone(phonenum);
+                if (info != null) {
+                    Log.d(TAG, "密码登录:" + info.phone + " | " + info.pwd);
+                    // 输入的密码和数据库储存的比较
+                    if (!et_password.getText().toString().equals(info.pwd)) {
+                        Toast.makeText(this, "请输入正确的密码", Toast.LENGTH_SHORT).show();
+                        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                        builder.setTitle("请重新输入密码");
+                        builder.setMessage("手机号" + phone + "，本次所输入的密码错误" + "，请重新输入密码");
+                        builder.setPositiveButton("好的", null);
+                        AlertDialog alert = builder.create();
+                        alert.show();
+                    } else { // 密码校验通过
+                        loginSuccess(); // 提示用户登录成功
+                    }
+
                 }
-
-
-
-
             } else if (rb_verify.isChecked()) { // 验证码方式校验
                 if (!et_password.getText().toString().equals(mVerifyCode)) {
                     Toast.makeText(this, "请输入正确的验证码", Toast.LENGTH_SHORT).show();
+                    // 弹出提醒对话框
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle("请重新输入验证码");
+                    builder.setMessage("手机号" + phone + "，本次所输入的验证码错误" + "，请重新输入验证码");
+                    builder.setPositiveButton("好的", null);
+                    AlertDialog alert = builder.create();
+                    alert.show();
                 } else { // 验证码校验通过
                     loginSuccess(); // 提示用户登录成功
                 }
             }
         }
-        else if (v.getId() == R.id.btn_logon){
+        if (v.getId() == R.id.btn_logon) {
             Intent intent = new Intent(this, RegisterWriteActivity.class);
             startActivity(intent);
+            finish();
         }
-
     }
 
     // 忘记密码修改后，从后一个页面携带参数返回当前页面时触发
@@ -251,59 +267,67 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == mRequestCode && data != null) {
-            // 用户密码已改为新密码，故更新密码变量
-            mPassword = data.getStringExtra("new_password");
         }
     }
 
     // 从修改密码页面返回登录页面，要清空密码的输入框
-
-
-
     @Override
     protected void onRestart() {
         et_password.setText("");
         super.onRestart();
     }
 
-    private void refreshResult(CompoundButton buttonView) {
-        String result = String.format(
-                (buttonView.isChecked()) ? "开" : "关");
-        if (buttonView.getId() == R.id.sw_ios) {
-             tv_ios_result.setText(result);
-        }
-
+    @Override
+    protected void onResume() {
+        Log.d(TAG, "onResume: openLink");
+        super.onResume();
+        // 获得用户数据库帮助器的一个实例
+        myHelper = UserDBHelper.getInstance(this, 2);
+        // 恢复页面，则打开数据库连接
+        myHelper.openWriteLink();
+        // 打开数据库帮助器的读连接
+        myHelper.openReadLink();
     }
 
-    // 选择事件的处理方法
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.d(TAG, "onPause: closelink");
+        // 暂停页面，则关闭数据库连接
+        myHelper.closeLink();
+    }
+
+    // 定义是否记住密码的勾选监听器
     private class CheckListener implements CompoundButton.OnCheckedChangeListener {
+        @Override
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
             if (buttonView.getId() == R.id.sw_ios) {
                 bRemember = isChecked;
-                refreshResult(buttonView);
             }
         }
     }
-    // 定义是否记住密码的勾选监听器
-//    private class CheckListener implements CompoundButton.OnCheckedChangeListener {
-//        @Override
-//        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-//            if (buttonView.getId() == R.id.sw_ios) {
-//                bRemember = isChecked;
-//            }
-//        }
-//    }
+
     // 校验通过，登录成功
     private void loginSuccess() {
-
-
+        // 如果勾选了“记住密码”
         if (bRemember) {
+            //把手机号码和密码保存为数据库的用户表记录
+            // 创建一个用户信息实体类
+            UserInfo info = new UserInfo();
+            info.phone = et_phone.getText().toString();
+            info.pwd = et_password.getText().toString();
+            info.update_time = DateUtil.getNowDateTime("yyyy-MM-dd HH:mm:ss");
+            // 往用户数据库添加登录成功的用户信息（包含手机号码、密码、登录时间）
+            myHelper.insert(info);
+
             //把手机号码和密码都保存到共享参数中
-            SharedPreferences.Editor editor = mShared.edit(); // 获得编辑器的对象
+            SharedPreferences.Editor editor = myShared.edit(); // 获得编辑器的对象
             editor.putString("phone", et_phone.getText().toString()); // 添加名叫phone的手机号码
             editor.putString("password", et_password.getText().toString()); // 添加名叫password的密码
             editor.commit(); // 提交编辑器中的修改
+
         }
+
 
         String desc = String.format("您的手机号码是%s，类型是%s。恭喜你通过登录验证，点击“确定”按钮返回上个页面",
                 et_phone.getText().toString(), typeArray[mType]);
@@ -320,5 +344,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setNegativeButton("我再看看", null);
         AlertDialog alert = builder.create();
         alert.show();
+    }
+
+
+    @Override
+    public void onFocusChange(View v, boolean hasFocus) {
+        String phone = et_phone.getText().toString();
+        // 判断是否是密码编辑框发生焦点变化
+        if (v.getId() == R.id.et_password) {
+            //用户已输入手机号码，且密码框获得焦点
+            if (phone.length() > 0 && hasFocus) {
+                Log.d(TAG, "onFocusChange: need link");
+                // 关闭数据库连接
+                myHelper.closeLink();
+                // 打开数据库帮助器的读连接
+                myHelper.openReadLink();
+                // 根据手机号码到数据库中查询用户记录
+                UserInfo info = myHelper.queryByPhone(phone);
+                if (info != null) {
+                    // 找到用户记录，则自动在密码框中填写该用户的密码
+                    et_password.setText(info.pwd);
+                }
+            }
+        }
     }
 }

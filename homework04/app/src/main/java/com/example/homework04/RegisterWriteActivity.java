@@ -26,6 +26,7 @@ public class RegisterWriteActivity extends AppCompatActivity implements View.OnC
     private EditText ct_name;
     private EditText ct_phonenumber;
     private EditText ct_password;
+
 //    private EditText et_weight;
 //    private boolean bMarried = false;
 
@@ -37,8 +38,13 @@ public class RegisterWriteActivity extends AppCompatActivity implements View.OnC
         ct_name = findViewById(R.id.ct_name);
         ct_phonenumber = findViewById(R.id.ct_phonenumber);
         ct_password = findViewById(R.id.ct_password);
+
 //        et_weight = findViewById(R.id.et_weight);
         findViewById(R.id.btn_save).setOnClickListener(this);
+        ct_phonenumber.addTextChangedListener(new RegisterWriteActivity.HideTextWatcher(ct_phonenumber));
+        ct_password.addTextChangedListener(new RegisterWriteActivity.HideTextWatcher(ct_password));
+
+
 //
 //        Spinner sp_married = findViewById(R.id.sp_married);
 //        sp_married.setOnItemSelectedListener(new TypeSelectedListener());
@@ -53,22 +59,45 @@ public class RegisterWriteActivity extends AppCompatActivity implements View.OnC
 //        public void onNothingSelected(AdapterView<?> arg0) {
 //        }
 //    }
+// 定义编辑框的文本变化监听器
+private class HideTextWatcher implements TextWatcher {
+    private EditText myView;// 声明一个编辑框对象
+    private int myMaxLength;// 声明一个最大长度变量
+    private CharSequence myStr; // 声明一个文本串
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        // 获得数据库帮助器的实例
-        mHelper = UserDBHelper.getInstance(this, 2);
-        // 打开数据库帮助器的写连接
-        mHelper.openWriteLink();
+    HideTextWatcher(EditText v) {
+        super();
+        myView = v;
+        myMaxLength = ViewUtil.getMaxLength(v);
     }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-        // 关闭数据库连接
-        mHelper.closeLink();
+    // 在编辑框的输入文本变化前触发
+    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
     }
+
+    // 在编辑框的输入文本变化时触发
+    public void onTextChanged(CharSequence s, int start, int before, int count) {
+        myStr = s;
+    }
+
+    // 在编辑框的输入文本变化后触发
+    public void afterTextChanged(Editable s) {
+        if (myStr == null || myStr.length() == 0)
+            return;
+        // 输入文本达到11位（如手机号码）时关闭输入法
+        if (myStr.length() == 11 && myMaxLength == 11) {
+            ViewUtil.hideAllInputMethod(RegisterWriteActivity.this);
+        }
+        // 输入文本达到6位（如登录密码）时关闭输入法
+        if (myStr.length() == 8 && myMaxLength == 8) {
+            ViewUtil.hideOneInputMethod(RegisterWriteActivity.this, myView);
+        }
+        if (myStr.length() == 6 && myMaxLength == 6) {
+            ViewUtil.hideOneInputMethod(RegisterWriteActivity.this, myView);
+        }
+    }
+}
+
 
     @Override
     public void onClick(View v) {
@@ -112,36 +141,24 @@ public class RegisterWriteActivity extends AppCompatActivity implements View.OnC
 
 
     // 定义编辑框的文本变化监听器
-    private class HideTextWatcher implements TextWatcher {
-        private EditText mView;
-        private int mMaxLength;
-        private CharSequence mStr;
 
-        HideTextWatcher(EditText v) {
-            super();
-            mView = v;
-            mMaxLength = ViewUtil.getMaxLength(v);
-        }
-        // 在编辑框的输入文本变化前触发
-        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-        }
-
-        // 在编辑框的输入文本变化时触发
-        public void onTextChanged(CharSequence s, int start, int before, int count) {
-            mStr = s;
-        }
-        // 在编辑框的输入文本变化后触发
-        public void afterTextChanged(Editable s) {
-            if (mStr == null || mStr.length() == 0)
-                return;
-            // 手机号码输入达到11位，或者密码/验证码输入达到6位，都关闭输入法软键盘
-            if ((mStr.length() == 11 && mMaxLength == 11) ||
-                    (mStr.length() == 8 && mMaxLength == 8)) {
-                ViewUtil.hideOneInputMethod(RegisterWriteActivity.this, mView);
-            }
-        }
-    }
     private void showToast(String desc) {
         Toast.makeText(this, desc, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        // 获得数据库帮助器的实例
+        mHelper = UserDBHelper.getInstance(this, 2);
+        // 打开数据库帮助器的写连接
+        mHelper.openWriteLink();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // 关闭数据库连接
+        mHelper.closeLink();
     }
 }
