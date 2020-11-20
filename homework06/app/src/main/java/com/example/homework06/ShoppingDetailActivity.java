@@ -46,18 +46,18 @@ public class ShoppingDetailActivity extends AppCompatActivity implements View.On
         findViewById(R.id.btn_add_cart).setOnClickListener(this);
     }
 
-//    @Override
-//    public void onClick(View v) {
-//        if (v.getId() == R.id.iv_cart) { // 点击了购物车图标
-//            // 跳转到购物车页面
-//            Intent intent = new Intent(this, ShoppingCartActivity.class);
-//            startActivity(intent);
-//        } else if (v.getId() == R.id.btn_add_cart) { // 点击了“添加”按钮
-//            // 把该商品添加到购物车
-//            addToCart(mGoodsId);
-//            Toast.makeText(this, "成功添加至购物车", Toast.LENGTH_SHORT).show();
-//        }
-//    }
+    @Override
+    public void onClick(View v) {
+        if (v.getId() == R.id.iv_cart) { // 点击了购物车图标
+            // 跳转到购物车页面
+            Intent intent = new Intent(this, ShoppingCartActivity.class);
+            startActivity(intent);
+        } else if (v.getId() == R.id.btn_add_cart) { // 点击了“添加”按钮
+            // 把该商品添加到购物车
+            addToCart(mGoodsId);
+            Toast.makeText(this, "成功添加至购物车", Toast.LENGTH_SHORT).show();
+        }
+    }
 
     // 把指定编号的商品添加到购物车
     private void addToCart(long goods_id) {
@@ -148,8 +148,5 @@ public class ShoppingDetailActivity extends AppCompatActivity implements View.On
         return true;
     }
 
-    @Override
-    public void onClick(View v) {
 
-    }
 }
