@@ -1,6 +1,5 @@
 package com.example.homework06;
 
-
 import android.app.Application;
 import android.graphics.Bitmap;
 import android.util.Log;
